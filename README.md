@@ -1,42 +1,47 @@
-# Beer Mat — v0.5.2
+# Beer Mat v0.5.3
 
-**Rough ideas → working things.**
+The v0.5.2 site, plus a deliberately small PostHog analytics layer.
 
-This is the launch-candidate Beer Mat prototype pass: a Next.js marketing site plus three deliberately believable working prototypes.
+The visual site and prototypes are unchanged. v0.5.3 adds enough measurement to answer the questions that matter while Beer Mat is trying to land its first clients:
+
+- how many people visit
+- where they came from
+- which prototype they opened
+- which lead CTA they clicked
+- whether they started the rough-idea form
+- whether they submitted the form
 
 ## Stack
 
 - Next.js 16.2.11
 - React 19.2.7
 - TypeScript
-- Plain CSS — no component framework, animation library or CMS
+- PostHog JS 1.407.2
 
-## Run it locally
+## Install locally
 
-### 1. Install Node.js
-
-Use Node.js 20.9 or newer. Node 22 LTS is a good choice.
-
-Check:
-
-```bash
-node --version
-npm --version
-```
-
-### 2. Unzip and open the project
-
-```bash
-cd beermat-v0.5.2
-```
-
-### 3. Install dependencies
+You need Node.js 20.9+.
 
 ```bash
 npm install
 ```
 
-### 4. Start the dev server
+Copy the example environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+Then add the values shown in your PostHog project settings:
+
+```env
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_...
+NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
+```
+
+Use the host for **your** PostHog region. If your project is in the US, use the US host PostHog gives you instead.
+
+Start the site:
 
 ```bash
 npm run dev
@@ -48,133 +53,180 @@ Open:
 http://localhost:3000
 ```
 
-Working prototypes:
+If the two PostHog environment variables are missing, the site still works normally; analytics simply does not initialise.
+
+## Vercel setup
+
+In the Beer Mat Vercel project:
+
+1. Open **Settings → Environment Variables**.
+2. Add `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`.
+3. Add `NEXT_PUBLIC_POSTHOG_HOST`.
+4. Add them to Production (and Preview too if you want analytics in preview deployments).
+5. Redeploy.
+
+Both variables intentionally start with `NEXT_PUBLIC_` because the PostHog browser SDK needs them client-side.
+
+## What is implemented
+
+### PostHog initialisation
+
+`instrumentation-client.ts` follows PostHog's current Next.js client integration pattern.
+
+It uses the `2026-05-30` recommended defaults and explicitly keeps this first analytics setup lean:
+
+- SPA pageviews enabled via `history_change`
+- page-leave events enabled
+- autocapture disabled
+- session recording disabled
+- surveys disabled
+- heatmaps/performance/error/dead-click capture disabled
+
+That leaves Beer Mat with normal Web Analytics plus the explicit events below, rather than a flood of interaction data we do not need yet.
+
+### Events
+
+#### `$pageview`
+Captured automatically by PostHog.
+
+Use this for visitors, pages, referrers and campaign/UTM traffic.
+
+#### `prototype_opened`
+Fires when somebody opens one of the three case-study/prototype pages.
+
+Property:
 
 ```text
-http://localhost:3000/work/quickquote
-http://localhost:3000/work/kickoff
-http://localhost:3000/work/booked
+prototype = quickquote | kickoff | booked
 ```
 
-## v0.5 changes
+#### `idea_cta_clicked`
+Fires from the lead-generating CTAs.
 
-### Homepage
-
-- The hero beer mat now **forms on load**: mat arrival, texture, stitch, beer ring, notes, 1 WEEK stamp, scribbled arrow and final result.
-- Motion respects `prefers-reduced-motion`.
-- Added a light commercial signal: **Founding sprints from £650**.
-- Tightened responsive type, focus states and copy wrapping.
-- `beermat.dev` and `hello@beermat.dev` are now treated as the real brand/domain throughout.
-- Added branded 404 page, sitemap, robots metadata and Open Graph artwork.
-
-### QuickQuote
-
-The demo now runs through:
+Properties:
 
 ```text
-customer enquiry → lead qualification → builder inbox → editable quote → sent state
+cta_location = header | hero | founding-sprint
+cta_label
 ```
 
-New bits include:
+#### `contact_started`
+Fires once, the first time somebody types something into any field in the rough-idea form.
 
-- lead progress stages
-- attachment representation
-- editable quote line items
-- add/remove line items
-- discount + validity
-- customer note
-- quote-send confirmation
-- reset demo
+No field contents are sent to PostHog.
 
-### Kickoff
+#### `contact_submitted`
+Fires when the user submits the rough-idea form and Beer Mat opens their email client.
 
-The onboarding demo now has a proper ending:
+Properties only contain booleans saying whether each field had a value. **The idea text and email address are not sent to PostHog.**
+
+Important: Beer Mat currently uses a `mailto:` hand-off, so this event proves the visitor pressed **Send the rough version**, not that they definitely sent the resulting email.
+
+#### `contact_email_clicked`
+Fires when the footer email address is clicked.
+
+## Suggested PostHog dashboard
+
+Create one dashboard called **Beer Mat / First Client**.
+
+Useful tiles:
+
+1. Unique visitors / pageviews
+2. Referrers
+3. `$pageview` broken down by path
+4. `prototype_opened` broken down by `prototype`
+5. `idea_cta_clicked` broken down by `cta_location`
+6. Funnel:
 
 ```text
-missing items → 100% ready → choose kickoff slot → book kickoff
+prototype_opened
+→ idea_cta_clicked
+→ contact_started
+→ contact_submitted
 ```
 
-It also fixes the literal `Everything&apos;s here.` display bug from v0.4.
-
-### Booked.
-
-The layout was reworked so the customer message has room to breathe instead of becoming a giant narrow column.
-
-The main workflow is now:
+Also create a homepage funnel:
 
 ```text
-incoming message → pick availability → assign staff → move diary → send confirmation
+$pageview where pathname = /
+→ idea_cta_clicked
+→ contact_started
+→ contact_submitted
 ```
 
-It still includes conflict detection, team capacity, deposit handling, week view, audit history and reset.
+## Outreach tracking
 
-## Important: hello@beermat.dev
+Use UTMs in links you send manually so PostHog can separate different outreach experiments.
 
-The site uses `hello@beermat.dev`, but the mailbox does **not** need to exist for local development.
-
-The homepage form currently creates a pre-filled `mailto:` draft. Until you create that mailbox, a real visitor could compose a message but delivery to that address would fail.
-
-A later production pass should replace or supplement this with real form delivery.
-
-## Hydration warning / Grammarly
-
-If Next.js shows a hydration warning containing attributes similar to:
+Examples:
 
 ```text
-data-new-gr-c-s-check-loaded
-data-gr-ext-installed
+https://beermat.dev/work/quickquote?utm_source=facebook&utm_medium=outreach&utm_campaign=trades
 ```
-
-those are inserted into the page by Grammarly before React hydrates. Test the page in a private/incognito window with extensions disabled to confirm it disappears.
-
-The project intentionally does **not** use `suppressHydrationWarning` to hide that extension-generated mismatch.
-
-## Production build
-
-```bash
-npm run build
-npm start
-```
-
-For deployment, Vercel is the path of least resistance for this stack. Point `beermat.dev` at the deployment and HTTPS will be handled by the host.
-
-## Main files
 
 ```text
-app/page.tsx                       homepage structure/copy
-app/globals.css                    almost all visual design + motion
-components/HeroMat.tsx             animated hero beer mat
-components/IdeaForm.tsx            rough-idea mailto form
-components/Logo.tsx                Beer Mat logo
-app/work/quickquote/               QuickQuote case study + demo
-app/work/kickoff/                  Kickoff case study + demo
-app/work/booked/                   Booked. case study + demo
-public/og-*.png                    social/link preview artwork
+https://beermat.dev/work/kickoff?utm_source=linkedin&utm_medium=outreach&utm_campaign=agencies
 ```
 
-## Current caveat
+```text
+https://beermat.dev/work/booked?utm_source=facebook&utm_medium=outreach&utm_campaign=booking_businesses
+```
 
-The source has been syntax/transpile checked, but the build environment used to package this version could not reach npm long enough to download the project dependencies, so the final `next build` was not run here. Your local `npm install && npm run dev` is the first full runtime compile of v0.5.
+Keep the names boring and consistent. The data is useful because you will know exactly which links you sent.
 
+## Check the integration after deploy
 
-## v0.5.1 patch
+Open the production site and trigger a few actions:
 
-- Booked/Dave case-study punchline now uses the same headline scale as the other prototype headers.
-- Footer sign-off is now: “One week. One useful thing. Then reality gets a vote.”
+1. Visit the homepage.
+2. Open QuickQuote.
+3. Click **Bring me an idea**.
+4. Type into the form.
+5. Submit it.
 
+Then check PostHog's live/activity events for:
 
-## v0.5.2 mobile QA patch
+```text
+$pageview
+prototype_opened
+idea_cta_clicked
+contact_started
+contact_submitted
+```
 
-This pass is intentionally boring in the best way: no redesign, just making the existing site behave like it belongs on a phone.
+For local debugging, PostHog supports its debug mode via the `__posthog_debug=true` URL parameter, e.g.:
 
-- increased mobile gutters and legibility for small/meta copy
-- increased touch targets and set form controls to a phone-friendly size
-- QuickQuote customer form is now single-column on mobile, with a compact expandable live-estimate drawer instead of a permanent half-screen summary
-- QuickQuote lead/quote views get more breathing room on narrow screens
-- Kickoff studio clients become a horizontal swipeable client selector on mobile
-- Booked. hides the desktop Week toggle on phone-sized layouts so the default workflow stays one day at a time
-- Booked. retains a horizontal scroll-snap safety net if a Week state survives a desktop → mobile resize
-- strengthened the mobile footer hierarchy and made the final Beer Mat line properly readable
-- tightened case-study typography and tool spacing at 430px and below
+```text
+http://localhost:3000/?__posthog_debug=true
+```
 
-Desktop behaviour and the v0.5.1 headline/footer patch remain unchanged.
+## Privacy note
+
+This build intentionally does **not** send form contents or email addresses to PostHog and disables broad autocapture/session recording.
+
+It currently uses PostHog's normal browser persistence. PostHog also supports a cookieless server-hash mode, but that mode requires a matching setting inside the PostHog project itself as well as SDK configuration. It has not been silently enabled here so the integration does not fail if the project-side mode is off.
+
+Decide on your consent/privacy setup before treating analytics configuration as finished for every jurisdiction you serve.
+
+## Files added for analytics
+
+```text
+instrumentation-client.ts
+lib/analytics.ts
+components/AnalyticsLink.tsx
+components/PrototypeTracker.tsx
+.env.example
+```
+
+Existing files modified:
+
+```text
+package.json
+components/Header.tsx
+components/Footer.tsx
+components/IdeaForm.tsx
+app/page.tsx
+app/work/quickquote/page.tsx
+app/work/kickoff/page.tsx
+app/work/booked/page.tsx
+```

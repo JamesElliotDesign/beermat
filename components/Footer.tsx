@@ -1,4 +1,5 @@
 import { Logo } from "./Logo";
+import { FooterEmailLink } from "./AnalyticsLink";
 
 export function Footer() {
   return (
@@ -13,7 +14,7 @@ export function Footer() {
         <small>Built without a 48-page discovery deck.</small>
       </div>
       <div className="footer-right">
-        <a href="mailto:hello@beermat.dev">hello@beermat.dev</a>
+        <FooterEmailLink href="mailto:hello@beermat.dev">hello@beermat.dev</FooterEmailLink>
         <a href="https://beermat.dev">beermat.dev ↗</a>
         <span>One week. One useful thing. Then reality gets a vote.</span>
       </div>

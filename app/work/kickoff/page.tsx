@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { WorkShell } from "../../../components/WorkShell";
 import { KickoffDemo } from "./KickoffDemo";
+import { PrototypeTracker } from "../../../components/PrototypeTracker";
 
 export const metadata: Metadata = {
   title: "Kickoff — working prototype",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export default function KickoffPage() {
   return (
     <WorkShell>
+      <PrototypeTracker prototype="kickoff" />
       <section className="case-hero"><p className="eyebrow">02 / KICKOFF</p><h1>Your client sent the logo.<br/><span>Somewhere. Probably.</span></h1><p>A small project should not begin with four days of detective work across email, WhatsApp, Drive and “I&apos;ll send that later”.</p></section>
       <section className="story-flow">
         <article className="story-problem"><span>THE COMPLAINT</span><h2>Chasing basic project bits quietly eats the week.</h2><p>The work is ready to begin, except the logo is in an old thread, nobody knows who owns the domain and the access invite never happened.</p></article>

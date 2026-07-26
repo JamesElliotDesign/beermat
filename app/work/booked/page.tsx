@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { WorkShell } from "../../../components/WorkShell";
 import { BookedDemo } from "./BookedDemo";
+import { PrototypeTracker } from "../../../components/PrototypeTracker";
 
 export const metadata: Metadata = {
   title: "Booked. — working prototype",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export default function BookedPage() {
   return (
     <WorkShell>
+      <PrototypeTracker prototype="booked" />
       <section className="case-hero booked-case-hero">
         <p className="eyebrow">03 / BOOKED.</p>
         <h1><span className="booked-main">WhatsApp is not a booking system.</span><span className="booked-punch">Neither is Dave.</span></h1>

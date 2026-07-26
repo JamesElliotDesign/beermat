@@ -3,6 +3,7 @@ import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { IdeaForm } from "../components/IdeaForm";
 import { HeroMat } from "../components/HeroMat";
+import { IdeaCtaLink } from "../components/AnalyticsLink";
 
 export default function HomePage() {
   return (
@@ -26,7 +27,7 @@ export default function HomePage() {
             <span><b>working thing</b> at the end</span>
           </div>
           <div className="hero-actions">
-            <a className="button button-primary" href="#start">Tell me the rough version</a>
+            <IdeaCtaLink className="button button-primary" href="#start" analyticsLocation="hero" analyticsLabel="Tell me the rough version">Tell me the rough version</IdeaCtaLink>
             <a className="text-link" href="#work">Poke the prototypes ↓</a>
           </div>
         </div>
@@ -181,7 +182,7 @@ export default function HomePage() {
         <div className="sprint-price-strip">
           <div><span>FOUNDING SPRINTS</span><strong>From £650</strong></div>
           <p>One problem. One week. One working thing. While Beer Mat is new, the early projects get the early price.</p>
-          <a href="#start">Bring me something messy →</a>
+          <IdeaCtaLink href="#start" analyticsLocation="founding-sprint" analyticsLabel="Bring me something messy">Bring me something messy →</IdeaCtaLink>
         </div>
       </section>
 
