@@ -1,6 +1,8 @@
-# Beer Mat v0.5.3
+# Beer Mat v0.5.3.1
 
-The v0.5.2 site, plus a deliberately small PostHog analytics layer.
+The v0.5.3 site plus a tiny PostHog reliability patch after validating the live EU ingestion path.
+
+The site design and custom Beer Mat events are unchanged. This patch fixes initial pageview capture and removes an unnecessary feature-flags request.
 
 The visual site and prototypes are unchanged. v0.5.3 adds enough measurement to answer the questions that matter while Beer Mat is trying to land its first clients:
 
@@ -75,7 +77,9 @@ Both variables intentionally start with `NEXT_PUBLIC_` because the PostHog brows
 
 It uses the `2026-05-30` recommended defaults and explicitly keeps this first analytics setup lean:
 
-- SPA pageviews enabled via `history_change`
+- initial landing page captured explicitly as `$pageview`
+- SPA navigation pageviews enabled via `history_change`
+- feature-flag requests disabled (`advanced_disable_flags: true`) because Beer Mat does not use them
 - page-leave events enabled
 - autocapture disabled
 - session recording disabled
@@ -87,7 +91,7 @@ That leaves Beer Mat with normal Web Analytics plus the explicit events below, r
 ### Events
 
 #### `$pageview`
-Captured automatically by PostHog.
+The initial landing page is captured explicitly after `posthog.init()`. Subsequent client-side Next.js navigations are captured by PostHog via `history_change`.
 
 Use this for visitors, pages, referrers and campaign/UTM traffic.
 
@@ -124,6 +128,19 @@ Important: Beer Mat currently uses a `mailto:` hand-off, so this event proves th
 
 #### `contact_email_clicked`
 Fires when the footer email address is clicked.
+
+## v0.5.3.1 patch notes
+
+Production diagnostics confirmed that PostHog initialises correctly and `POST https://eu.i.posthog.com/e/` returns `200 OK`, while the unused `/flags/` request returned `401`.
+
+This patch therefore:
+
+1. adds `advanced_disable_flags: true` so Beer Mat no longer makes the unused feature-flags request, and
+2. calls `posthog.capture("$pageview")` immediately after initialisation so the first landing page is recorded.
+
+`capture_pageview: "history_change"` remains enabled for subsequent client-side navigation.
+
+After deploying, open a fresh browser session, visit `https://beermat.dev/?__posthog_debug=true`, navigate into a prototype, then refresh **Web analytics → Installation Health**. The `$pageview` check should turn green once PostHog processes the event.
 
 ## Suggested PostHog dashboard
 
@@ -184,7 +201,7 @@ Open the production site and trigger a few actions:
 4. Type into the form.
 5. Submit it.
 
-Then check PostHog's live/activity events for:
+Then check PostHog event data / Product Analytics for:
 
 ```text
 $pageview
