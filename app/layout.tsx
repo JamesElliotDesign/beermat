@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { PostHogSnippet } from "../components/PostHogSnippet";
+import { PageviewTracker } from "../components/PageviewTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://beermat.dev"),
@@ -33,7 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <PostHogSnippet projectToken={projectToken} apiHost={apiHost} />
       </head>
-      <body>{children}</body>
+      <body><PageviewTracker />{children}</body>
     </html>
   );
 }

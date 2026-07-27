@@ -1,4 +1,22 @@
-# Beer Mat v0.5.3.2
+# Beer Mat v0.5.3.3
+
+## PostHog pageview fix
+
+This patch makes Beer Mat own `$pageview` capture explicitly instead of relying on PostHog's automatic SPA behaviour.
+
+PostHog's current configuration docs state that `capture_pageview` defaults to `"history_change"` when using `defaults: "2025-05-24"` or later. Beer Mat uses `defaults: "2026-05-30"`, so a direct page load does not automatically emit the initial `$pageview`.
+
+In v0.5.3.3:
+
+- PostHog is initialized with `capture_pageview: false` to prevent duplicate automatic events.
+- `PageviewTracker` captures `$pageview` after the Next.js app hydrates.
+- It captures another `$pageview` whenever the Next pathname changes.
+- `$current_url` is explicitly included, so UTM parameters on the landing URL are preserved on the initial event.
+- All existing Beer Mat custom events remain unchanged.
+
+After deploying, load `https://beermat.dev/?__posthog_debug=true`, then navigate to a prototype. In DevTools Network you should see `/e/` requests for `$pageview`; PostHog Installation Health should then have an actual `$pageview` to detect.
+
+---
 
 This is v0.5.3.1 with the PostHog integration reset to the **recommended JavaScript web HTML snippet** from PostHog's current installation guide.
 
