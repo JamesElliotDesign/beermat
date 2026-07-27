@@ -1,5 +1,7 @@
 "use client";
 
+import posthog from "posthog-js";
+
 export type PrototypeName = "quickquote" | "kickoff" | "booked";
 export type IdeaCtaLocation = "header" | "hero" | "founding-sprint";
 
@@ -12,9 +14,9 @@ export function captureBeerMatEvent(
   event: string,
   properties: Record<string, string | number | boolean | undefined> = {}
 ) {
-  if (typeof window === "undefined" || !window.posthog) return;
+  if (typeof window === "undefined") return;
 
-  window.posthog.capture(event, {
+  posthog.capture(event, {
     ...properties,
     beer_mat_path: currentPath(),
   });

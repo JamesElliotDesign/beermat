@@ -1,6 +1,6 @@
 {
   "name": "beermat-v0-5",
-  "version": "0.5.3.3",
+  "version": "0.5.3.4",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,7 +10,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "next": "16.2.11",
-    "posthog-js": "^1.407.2",
+    "posthog-js": "1.407.2",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },

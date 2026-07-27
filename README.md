@@ -1,76 +1,63 @@
-# Beer Mat v0.5.3.3
+# Beer Mat v0.5.3.4
 
-## PostHog pageview fix
+This release is a clean PostHog reset. The website/design/prototypes are unchanged from v0.5.3.3; only the analytics integration has been simplified.
 
-This patch makes Beer Mat own `$pageview` capture explicitly instead of relying on PostHog's automatic SPA behaviour.
+## What changed
 
-PostHog's current configuration docs state that `capture_pageview` defaults to `"history_change"` when using `defaults: "2025-05-24"` or later. Beer Mat uses `defaults: "2026-05-30"`, so a direct page load does not automatically emit the initial `$pageview`.
+PostHog now follows the current official Next.js client-side integration:
 
-In v0.5.3.3:
+1. `posthog-js` is installed as a dependency.
+2. A root-level `instrumentation-client.ts` initializes the SDK.
+3. No custom PostHog loader/snippet is used.
+4. No manual `$pageview` capture is used.
+5. No `capture_pageview` override is used.
+6. No feature-flag, compression, session, autocapture, or other SDK behaviour is overridden.
 
-- PostHog is initialized with `capture_pageview: false` to prevent duplicate automatic events.
-- `PageviewTracker` captures `$pageview` after the Next.js app hydrates.
-- It captures another `$pageview` whenever the Next pathname changes.
-- `$current_url` is explicitly included, so UTM parameters on the landing URL are preserved on the initial event.
-- All existing Beer Mat custom events remain unchanged.
+The entire initialization is:
 
-After deploying, load `https://beermat.dev/?__posthog_debug=true`, then navigate to a prototype. In DevTools Network you should see `/e/` requests for `$pageview`; PostHog Installation Health should then have an actual `$pageview` to detect.
+```ts
+import posthog from "posthog-js";
 
----
-
-This is v0.5.3.1 with the PostHog integration reset to the **recommended JavaScript web HTML snippet** from PostHog's current installation guide.
-
-No Beer Mat design, prototype or conversion-flow changes are included in this patch.
-
-## Why this patch exists
-
-The previous package-based integration was successfully initialising and `POST /e/` returned `200 OK`, but PostHog's Installation Health still did not recognise `$pageview`.
-
-Rather than keep overriding SDK behaviour, v0.5.3.2 follows PostHog's recommended JavaScript web installation directly:
-
-- the official HTML loader snippet is emitted in the document `<head>`
-- it calls `posthog.init(projectToken, { api_host, defaults: "2026-05-30" })`
-- there is **no custom `$pageview` code**
-- there is **no custom pageview/history configuration**
-- there is **no feature-flag override**
-- `posthog-js` is no longer bundled as an npm runtime dependency
-- Beer Mat's five custom events continue to use `window.posthog.capture(...)`
-
-In other words: PostHog now owns its normal web-analytics behaviour exactly as its JavaScript web guide expects.
-
-## Stack
-
-- Next.js 16.2.11
-- React 19.2.7
-- TypeScript
-- PostHog JavaScript web snippet (loaded from PostHog at runtime)
-
-## Install locally
-
-You need Node.js 20.9+.
-
-```bash
-npm install
+posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
+  api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+  defaults: "2026-05-30",
+});
 ```
 
-Copy the example environment file:
+The existing Beer Mat custom events remain:
 
-```bash
-cp .env.example .env.local
-```
+- `prototype_opened`
+- `idea_cta_clicked`
+- `contact_started`
+- `contact_submitted`
+- `contact_email_clicked`
 
-Then add the values shown in your PostHog project settings:
+Form text and email addresses are not sent to PostHog.
+
+## Vercel environment variables
+
+Keep these configured for **Production** (and Preview if you want analytics there):
 
 ```env
 NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_...
 NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
 ```
 
-Use the host for **your** PostHog region.
+Use the exact host shown in your PostHog project settings.
 
-Start the site:
+Because these are `NEXT_PUBLIC_` values, redeploy after changing them.
+
+## Local development
+
+Requirements:
+
+- Node.js 20.9+
+- npm
+
+Install and run:
 
 ```bash
+npm install
 npm run dev
 ```
 
@@ -80,151 +67,30 @@ Open:
 http://localhost:3000
 ```
 
-If either PostHog environment variable is missing, Beer Mat renders without the PostHog snippet and otherwise works normally.
+## Production check
 
-## Vercel
+After deploying:
 
-Keep these environment variables in the Beer Mat project:
+1. Open PostHog **Web analytics → Live**.
+2. Open `https://beermat.dev/` in a fresh browser window.
+3. Navigate to QuickQuote, Kickoff and Booked.
+4. Confirm live traffic/events arrive.
+5. Then check Installation Health.
 
-```text
-NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
-NEXT_PUBLIC_POSTHOG_HOST
-```
-
-They should be available to **Production**. Redeploy after changing them.
-
-## PostHog implementation
-
-### `components/PostHogSnippet.tsx`
-
-This contains the upstream loader shown by PostHog under:
-
-**JavaScript web → Installation → Option 1: Add the JavaScript snippet to your HTML (Recommended)**
-
-The only dynamic values are Beer Mat's project token and regional API host from the Vercel environment.
-
-`app/layout.tsx` renders the snippet in `<head>`, before the interactive Beer Mat client components run.
-
-### `lib/analytics.ts`
-
-Beer Mat's explicit events call the global object created by the snippet:
-
-```ts
-window.posthog.capture("prototype_opened", {
-  prototype: "quickquote",
-});
-```
-
-The snippet creates a small queue immediately, so calls made while PostHog's real script is still loading are queued rather than lost.
-
-## What should now be automatic
-
-PostHog's normal JavaScript web installation should own normal web analytics, including `$pageview`, according to the defaults selected by `defaults: "2026-05-30"`.
-
-Beer Mat does not manually capture or override `$pageview` in this build.
-
-## Beer Mat custom events
-
-These remain unchanged:
-
-### `prototype_opened`
-
-```text
-prototype = quickquote | kickoff | booked
-```
-
-### `idea_cta_clicked`
-
-```text
-cta_location = header | hero | founding-sprint
-cta_label
-```
-
-### `contact_started`
-
-Fires once when somebody begins typing into the rough-idea form.
-
-### `contact_submitted`
-
-Fires when the visitor presses **Send the rough version** and Beer Mat opens their mail client.
-
-Only booleans about which fields were populated are sent. The idea text and email address are **not** sent to PostHog.
-
-### `contact_email_clicked`
-
-Fires when the footer email address is clicked.
-
-## Verify v0.5.3.2 after deploy
-
-Open a fresh browser session and visit:
+For SDK debug logging you can also visit:
 
 ```text
 https://beermat.dev/?__posthog_debug=true
 ```
 
-Then:
+## Build
 
-1. load the homepage
-2. open QuickQuote
-3. click **Bring me an idea**
-4. type into the form
-5. submit the form if convenient
-
-In DevTools → Network, PostHog's HTML loader should fetch its runtime script from your regional `*-assets.i.posthog.com` host and send analytics to your regional ingestion host.
-
-Then check PostHog for:
-
-```text
-$pageview
-prototype_opened
-idea_cta_clicked
-contact_started
-contact_submitted
+```bash
+npm run build
+npm start
 ```
 
-Do not add another manual `$pageview` workaround on top of this build before first checking the behaviour of the recommended snippet itself.
+## Beer Mat
 
-## Suggested First Client dashboard
-
-Once events are flowing, create **Beer Mat / First Client** with:
-
-1. unique visitors / pageviews
-2. referrers
-3. `$pageview` by path
-4. `prototype_opened` by `prototype`
-5. `idea_cta_clicked` by `cta_location`
-6. funnel:
-
-```text
-prototype_opened
-→ idea_cta_clicked
-→ contact_started
-→ contact_submitted
-```
-
-## Outreach UTMs
-
-```text
-https://beermat.dev/work/quickquote?utm_source=facebook&utm_medium=outreach&utm_campaign=trades
-```
-
-```text
-https://beermat.dev/work/kickoff?utm_source=linkedin&utm_medium=outreach&utm_campaign=agencies
-```
-
-```text
-https://beermat.dev/work/booked?utm_source=facebook&utm_medium=outreach&utm_campaign=booking_businesses
-```
-
-## Analytics files in this build
-
-```text
-components/PostHogSnippet.tsx
-lib/analytics.ts
-components/AnalyticsLink.tsx
-components/PrototypeTracker.tsx
-types/posthog.d.ts
-.env.example
-```
-
-`instrumentation-client.ts` has been removed and `posthog-js` has been removed from `package.json`.
+- https://beermat.dev
+- hello@beermat.dev
