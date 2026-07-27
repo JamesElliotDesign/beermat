@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Beer Mat",
-    title: "Beer Mat — Got an idea? Let's make the f*cking thing.",
+    title: "Beer Mat — Got an idea? Let's make it happen.",
     description: "One-week prototype sprints. One problem. One working thing.",
     url: "/",
     images: ["/og-default.png"],
