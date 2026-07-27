@@ -15,7 +15,7 @@ export default function HomePage() {
           <div className="hero-stamp">ONE IDEA. ONE SPRINT. ONE THING YOU CAN ACTUALLY CLICK.</div>
           <h1>
             Got an idea?
-            <span>Let&apos;s make the f*cking thing.</span>
+            <span>Let&apos;s make it happen.</span>
           </h1>
           <p className="hero-lede">
             Beer Mat turns rough ideas, awkward workflows and “there has to be a better way”
