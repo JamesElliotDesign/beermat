@@ -1,16 +1,7 @@
 "use client";
 
-import posthog from "posthog-js";
-
 export type PrototypeName = "quickquote" | "kickoff" | "booked";
 export type IdeaCtaLocation = "header" | "hero" | "founding-sprint";
-
-function hasPostHogConfig() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN &&
-      process.env.NEXT_PUBLIC_POSTHOG_HOST
-  );
-}
 
 function currentPath() {
   if (typeof window === "undefined") return undefined;
@@ -21,9 +12,9 @@ export function captureBeerMatEvent(
   event: string,
   properties: Record<string, string | number | boolean | undefined> = {}
 ) {
-  if (typeof window === "undefined" || !hasPostHogConfig()) return;
+  if (typeof window === "undefined" || !window.posthog) return;
 
-  posthog.capture(event, {
+  window.posthog.capture(event, {
     ...properties,
     beer_mat_path: currentPath(),
   });

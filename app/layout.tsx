@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { PostHogSnippet } from "../components/PostHogSnippet";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://beermat.dev"),
@@ -24,8 +25,14 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+  const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+
   return (
     <html lang="en">
+      <head>
+        <PostHogSnippet projectToken={projectToken} apiHost={apiHost} />
+      </head>
       <body>{children}</body>
     </html>
   );
